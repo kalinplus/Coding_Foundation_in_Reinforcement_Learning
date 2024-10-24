@@ -33,10 +33,21 @@ def Basic_MC(env, gamma=0.9, theta=1e-10, episodes=100, iterations=1000):
                 state_temp = state
                 # sampling the trajectory
                 # TODO: what if the behavior policy is stochastic? Is one episode enough to estimate the action value?
+                for i in range(episodes):
+                    next_state, reward = env.get_next_state_reward(state_temp, action)
+                    q_value += (gamma ** i) * reward
+                    state_temp = (next_state % env.env_size[0], next_state // env.env_size[0])
                     # take the action according to the policy
                     # TODO: what if the behavior policy is stochastic?
+                    action_idx = np.argmax(policy[next_state])
+                    action = env.action_space[action_idx]
+                q_values.append(q_value)
             # policy improvement
+            idx = np.argmax(np.array(q_values))
+            policy[s, idx] = 1
+            policy[s, np.arange(len(env.action_space)) != idx] = 0
             # calculate the state values
+            V[s] = max(q_values)
     return V, policy
 
 
@@ -60,6 +71,9 @@ def ExploringStarts_MC(env, gamma=0.9, episodes=1000, iterations=1000):
         state_action_pairs = []
         rewards = []
         # TODO: what are the following three lines for?(exploring-starts condition)
+        pair_idx = i % (env.num_states * len(env.action_space))
+        s = pair_idx // env.num_states
+        a = pair_idx % len(env.action_space)
         state_action_pairs.append((s, a))
         next_state, reward = env.get_next_state_reward((s % env.env_size[0], s // env.env_size[0]), env.action_space[a])
         rewards.append(reward)
@@ -75,7 +89,14 @@ def ExploringStarts_MC(env, gamma=0.9, episodes=1000, iterations=1000):
             rewards.append(reward)
         # policy evaluation, every-visit method
         # TODO: what if every-visit method is used? (generalized policy iteration)
-
+        g = 0
+        for w in range(len(state_action_pairs) - 1, -1, -1):
+            g = gamma * g + rewards[w]
+            if state_action_pairs[w] in state_action_pairs[:w]:
+                continue
+            else:
+                s, a = state_action_pairs[w]
+                return_temp[s, a] = g
         # policy improvement
         for s in range(env.num_states):
             for a, _ in enumerate(env.action_space):

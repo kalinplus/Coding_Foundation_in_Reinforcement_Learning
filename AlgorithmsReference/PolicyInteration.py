@@ -40,9 +40,7 @@ def policy_iteration(env, gamma=0.9, theta=1e-10, epochs=10, continuing=False):
                     q_values.append(reward + gamma * v_next_state)
                 # TODO: compute the state values under the current policy
                 # Note: the initial policy is stochastic, which is different to that in value iteration
-                V[s] = np.sum(policy[s] * q_values)  # v_{j+1}
-                # V[s] = policy[s] @ np.array(q_values)
-
+                V[s] = np.dot(policy[s], np.array(q_values))
         # policy improvement
         for s in range(env.num_states):
             state = (s % env.env_size[0], s // env.env_size[0])
@@ -50,21 +48,20 @@ def policy_iteration(env, gamma=0.9, theta=1e-10, epochs=10, continuing=False):
             for a, action in enumerate(env.action_space):
                 next_state, reward = env.get_next_state_reward(state, action)
                 # TODO: compute the action values
-                q_values.append(reward + gamma * V[next_state])
-
+                if continuing is False and state == env.target_state:  # absorbing state
+                    v_next_state = 0
+                else:
+                    v_next_state = V[next_state]
+                q_values.append(reward + gamma * v_next_state)
             # TODO: finish the policy improvement step
-            # Can't use list comprehension [1 if q_value = max_value else 0 for q_value in q_values] directly
-            # Because if there are multiple max q_values, this kind of implementing policy will fail
             max_idx = np.argmax(q_values)
-            policy[s, :] = 0
             policy[s, max_idx] = 1
-
+            policy[s, np.arange(len(env.action_space)) != max_idx] = 0
             # special case: absorbing state
             # TODO: complement the policy for absorbing state described as the first way for episodic tasks in the book
             if state == env.target_state:
-                policy[s, :] = 0
                 policy[s, -1] = 1
-
+                policy[s, :-1] = 0
         # check the terminal condition
         delta = max(np.abs(temp_v - V))
         print(f"Iteration {iter_count}, delta: {delta}")
