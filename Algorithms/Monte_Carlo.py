@@ -33,9 +33,20 @@ def Basic_MC(env, gamma=0.9, theta=1e-10, episodes=100, iterations=1000):
                 state_temp = state
                 # sampling the trajectory
                 # TODO: what if the behavior policy is stochastic? Is one episode enough to estimate the action value?
+                for i in range(episodes):
+                    next_state, reward = env.get_next_state_reward(state_temp, action)
+                    q_value += (gamma ** i) * reward
+                    state_temp = (next_state % env.env_size[0], next_state // env.env_size[0])
                     # take the action according to the policy
                     # TODO: what if the behavior policy is stochastic?
-            # policy improvement
+                    action_idx = np.argmax(policy[next_state]) 
+                    action = env.action_space[action_idx]
+                q_values.append(q_value)
+            # TODO: policy improvement
+            max_action_idx = np.argmax(np.array(q_values))
+            policy[s, :] = 0
+            policy[s, max_action_idx] = 1
+            V[s] = q_values[max_action_idx]
             # calculate the state values
     return V, policy
 
