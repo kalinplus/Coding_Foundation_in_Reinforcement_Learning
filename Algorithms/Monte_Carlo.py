@@ -141,28 +141,31 @@ def e_greedy_MC(env, epsilon=0.2, gamma=0.9, episodes=10000, iterations=100):
         s_temp = s
         for i in range(episodes):
             # sample the trajectory following the current policy
+            # action is an action, but a is just a idx
             action = env.action_space[a]
             pairs.append((s_temp, a))
-            visits[s_temp, a] += 1
-            next_state, reward = env.get_next_state_reward((s_temp % env.env_size[0], s_temp // env.env_size[0]),
-                                                           action)
-            # _, _, _, _ = env.step(action)  # observe the trajectories
+            visits[s, a] += 1
+            next_state, reward = env.get_next_state_reward((s_temp % env.env_size[0], s_temp // env.env_size[0]), action)
             rewards.append(reward)
             s_temp = next_state
             a = np.random.choice(len(env.action_space), p=policy[s_temp])
+
+            # _, _, _, _ = env.step(action)  # observe the trajectories
+
         # env.render()  # play the video
         # policy evaluation, every-visit method
         g = 0
         for t in range(len(rewards) - 1, -1, -1):
-            g = gamma * g + rewards[t]
+            g = rewards[t] + gamma * g
             s, a = pairs[t]
             return_temp[s, a] += g
             num_temp[s, a] += 1
             Q[s, a] = return_temp[s, a] / num_temp[s, a] if num_temp[s, a] != 0 else 0
             idx = np.argmax(Q[s])
-            policy[s, idx] = 1 - epsilon * (len(env.action_space) - 1) / len(env.action_space)
-            policy[s, np.arange(len(env.action_space)) != idx] = epsilon / len(env.action_space)
-            V[s] = max(Q[s])
+            policy[s, :] = epsilon / len(env.action_space)
+            policy[s, idx] = 1 - ((1 - (1 / len(env.action_space))) * epsilon)
+            V[s] = Q[s, idx]
+            
 
     # return the consistent deterministic policy
     # for s in range(env.num_states):
@@ -171,6 +174,11 @@ def e_greedy_MC(env, epsilon=0.2, gamma=0.9, episodes=10000, iterations=100):
     #     policy[s, np.arange(len(env.action_space)) != idx] = 0
 
     # TODO: calculate the state values of deterministic policy, currently return the expectation state value matrix
+    # for s in range(env.num_states):
+    #     max_idx = np.argmax(policy[s])
+    #     policy[s, :] = 0
+    #     policy[s, max_idx] = 1
+
 
     plt.scatter(np.arange(env.num_states * len(env.action_space)), visits.flatten())
     plt.show()

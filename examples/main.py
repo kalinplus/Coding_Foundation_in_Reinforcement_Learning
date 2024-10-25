@@ -37,8 +37,8 @@ if __name__ == "__main__":
 
     # check the differences among variants of basic Monte-Carlo Methods
     # optimal_value,optimal_policy = Basic_MC(env)
-    optimal_value, optimal_policy = ExploringStarts_MC(env)
-    # optimal_value, optimal_policy = e_greedy_MC(env)
+    # optimal_value, optimal_policy = ExploringStarts_MC(env)
+    optimal_value, optimal_policy = e_greedy_MC(env)
 
     # optimal_value, optimal_policy = sarsa(env, (0, 0))
     # optimal_value, optimal_policy = expected_sarsa(env, start_state=(0, 0))
