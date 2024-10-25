@@ -24,6 +24,7 @@ class GridWorld():
         self.forbidden_states = forbidden_states
 
         self.agent_state = start_state
+        # action_space like an array of ((0, 1), (0, -1), ...), record the position change
         self.action_space = args.action_space
         self.reward_target = args.reward_target
         self.reward_forbidden = args.reward_forbidden

@@ -46,6 +46,7 @@ def Basic_MC(env, gamma=0.9, theta=1e-10, episodes=100, iterations=1000):
             max_action_idx = np.argmax(np.array(q_values))
             policy[s, :] = 0
             policy[s, max_action_idx] = 1
+            # Update state value
             V[s] = q_values[max_action_idx]
             # calculate the state values
     return V, policy
@@ -70,7 +71,10 @@ def ExploringStarts_MC(env, gamma=0.9, episodes=1000, iterations=1000):
         # generate an episode and use every-visit method to boost the sampling efficiency
         state_action_pairs = []
         rewards = []
-        # TODO: what are the following three lines for?(exploring-starts condition)
+        # TODO: what are the following six lines for?(exploring-starts condition)
+        pair_idx = i % (env.num_states * len(env.action_space))
+        s = pair_idx // env.num_states
+        a = pair_idx % len(env.action_space)
         state_action_pairs.append((s, a))
         next_state, reward = env.get_next_state_reward((s % env.env_size[0], s // env.env_size[0]), env.action_space[a])
         rewards.append(reward)
@@ -86,16 +90,24 @@ def ExploringStarts_MC(env, gamma=0.9, episodes=1000, iterations=1000):
             rewards.append(reward)
         # policy evaluation, every-visit method
         # TODO: what if every-visit method is used? (generalized policy iteration)
-
+        # Now we use first-visit
+        g = 0
+        for i in range(len(state_action_pairs) - 1, -1, -1):
+            if state_action_pairs[i] in state_action_pairs[:i]:
+                continue
+            else:
+                g = rewards[i] + gamma * g
+                s, a = state_action_pairs[i]
+                return_temp[s, a] = g
         # policy improvement
         for s in range(env.num_states):
             for a, _ in enumerate(env.action_space):
                 Q[s, a] = return_temp[s, a]
-            idx = np.argmax(Q[s])
-            policy[s, idx] = 1
-            policy[s, np.arange(len(env.action_space)) != idx] = 0
+            max_action_idx = np.argmax(Q[s]) 
+            policy[s, :] = 0
+            policy[s, max_action_idx] = 1
             # update state values
-            V[s] = max(Q[s])
+            V[s] = Q[s, max_action_idx]
 
     return V, policy
 
