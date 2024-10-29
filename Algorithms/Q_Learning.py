@@ -16,32 +16,10 @@ def on_policy_ql(env, start_state, alpha=0.1, gamma=0.9, epsilon=0.1, iterations
     policy = np.random.rand(env.num_states, len(env.action_space))
     policy = policy / policy.sum(axis=1)[:, np.newaxis]
     for k in range(iterations):
-        state = start_state
-        s = state[1] * env.env_size[0] + state[0]
-        a = np.random.choice(np.arange(len(env.action_space)), p=policy[s])
-        action = env.action_space[a]
-        while state != (4, 4):
-            next_state, reward = env.get_next_state_reward(state, action)
-            q[s, a] = q[s, a] - alpha * (
-                    q[s, a] - (reward + gamma * np.max(q[next_state])))  # solving the Bellman optimality equation
-
-            # update the policy
-            idx = np.argmax(q[s])
-            policy[s, idx] = 1 - epsilon * (len(env.action_space) - 1) / len(env.action_space)
-            policy[s, np.arange(len(env.action_space)) != idx] = epsilon / len(env.action_space)
-            v[s] = np.sum(policy[s] * q[s])
-
-            s = next_state
-            state = (s % env.env_size[0], s // env.env_size[0])
-            a = np.random.choice(np.arange(len(env.action_space)), p=policy[s])
-            action = env.action_space[a]
-
+        ...
     # consistent policy
     # TODO: why update the policy here?
-    # for s in range(env.num_states):
-    #     idx = np.argmax(q[s])
-    #     policy[s, idx] = 1
-    #     policy[s, np.arange(len(env.action_space)) != idx] = 0
+
     return v, policy
 
 
@@ -90,22 +68,12 @@ def dqn(env, gt_state_values, c_steps=5, num_experience=1000, alpha=0.01, gamma=
         next_states = torch.tensor([reply_buffer[i][3] for i in batch], dtype=torch.float).view(-1, 2)
         # update the main network
         # TODO: finish the calculation of predicted action values
-        main_net_input = states / env.env_size[0]  # (s[0],s[1],a)
-        q_values = main_net(main_net_input).gather(1, actions.long())
+
         # TODO: finish the calculation of target action values
-        target_net_input = next_states / env.env_size[0]
-        with torch.no_grad():
-            next_q_values = target_net(target_net_input).max(dim=1)[0].view(-1, 1)
-        target = rewards + gamma * next_q_values
+
         # TODO: finish the update of one of the two deep neural networks, think which one to be updated
-        loss = criterion(q_values, target)
-        losses.append(loss.item())
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+
         # TODO: synchronize the parameters of two networks
-        if (k + 1) % c_steps == 0:
-            target_net.load_state_dict(main_net.state_dict())
         # calculate the value function
         delta = 0
         for s in range(env.num_states):

@@ -27,35 +27,23 @@ def sarsa(env, start_state, gamma=0.9, alpha=0.1, epsilon=0.1, episodes=1000, it
     total_rewards = []
     for k in range(iterations):
         # TODO: what if the start state is not unique?
-        state = start_state  # s
-        s = state[1] * env.env_size[0] + state[0]
-        a = np.random.choice(np.arange(len(env.action_space)), p=policy[s])
-        action = env.action_space[a]  # a
 
         length = 0
         total_reward = 0
         while state != (4, 4):  # TODO: what if we don't specify the target state?
+            ...
             # policy evaluation: action value update
-            next_state, reward = env.get_next_state_reward(state, action)  # r,s
-            next_action = np.random.choice(np.arange(len(env.action_space)), p=policy[next_state])  # a
+
             # action value update
-            Q[s, a] = Q[s, a] - alpha * (Q[s, a] - (reward + gamma * Q[next_state, next_action]))
+
             # policy improvement
-            idx = np.argmax(Q[s])
+
             # e-greedy exploration
-            policy[s, idx] = 1 - epsilon * (len(env.action_space) - 1) / len(env.action_space)
-            policy[s, np.arange(len(env.action_space)) != idx] = epsilon / len(env.action_space)
+
             # state value update
-            V[s] = np.sum(policy[s] * Q[s])
+
             # update the state and action
-            s = next_state
-            state = (next_state % env.env_size[0], next_state // env.env_size[0])
-            action = env.action_space[next_action]
-            a = next_action
-            length += 1
-            total_reward += reward
-        lengths.append(length)
-        total_rewards.append(total_reward)
+
 
     # TODO: plot the graph of the convergence of the length of episodes and that of the total rewards of episodes
     fig = plt.subplots(2, 1)
@@ -87,7 +75,8 @@ def expected_sarsa(env, start_state, gamma=0.9, alpha=0.1, epsilon=0.1, episodes
             # policy evaluation: action value update
             next_state, reward = env.get_next_state_reward(state, action)  # r,s
             # action value update
-            Q[s, a] = Q[s, a] - alpha * (Q[s, a] - (reward + gamma * V[next_state]))
+            # Is this really expected Sarsa?
+            # TODO: Implement the expected Sarsa action value evaluation
             # policy improvement
             idx = np.argmax(Q[s])
             # e-greedy exploration
@@ -118,11 +107,8 @@ def n_step_sarsa(env, start_state, steps, gamma=0.9, alpha=0.1, epsilon=0.1, epi
             next_state, reward = env.get_next_state_reward(state, action)
             rewards = rewards * gamma + reward
             next_action = env.action_space[np.random.choice(np.arange(len(env.action_space)), p=policy[next_state])]
-            for t in range(steps - 2):
-                next_state, reward = env.get_next_state_reward(
-                    (next_state % env.env_size[0], next_state // env.env_size[0]), next_action)
-                rewards = rewards * gamma + reward
-                next_action = env.action_space[np.random.choice(np.arange(len(env.action_space)), p=policy[next_state])]
+            # TODO: Apply the n-step policy
+
             next_s = next_state
             next_a = np.random.choice(np.arange(len(env.action_space)), p=policy[next_s])
             Q[s, a] = Q[s, a] - alpha * (Q[s, a] - (rewards + (gamma ** steps) * Q[next_s, next_a]))
